@@ -103,21 +103,21 @@
             console.error('Error fetching events:', error);
           });
         
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'dayGridMonth',
-          events: 'https://script.googleapis.com/v1/scripts/AKfycbwGtZbC9c3BVYRsTBUjbI2pVel8YWJA-JQiREJQxkuEby0LOZJbk5XkjO7yeXn-YkAG:run', // Your Apps Script URL
-          eventDataTransform: function (eventData) {
-            return {
-              title: eventData.title,
-              start: eventData.start,
-              end: eventData.end,
-              description: eventData.description,
-              location: eventData.location
-            };
-          }
-        });
+        // var calendar = new FullCalendar.Calendar(calendarEl, {
+        //   initialView: 'dayGridMonth',
+        //   events: 'https://script.googleapis.com/v1/scripts/AKfycbwGtZbC9c3BVYRsTBUjbI2pVel8YWJA-JQiREJQxkuEby0LOZJbk5XkjO7yeXn-YkAG:run', // Your Apps Script URL
+        //   eventDataTransform: function (eventData) {
+        //     return {
+        //       title: eventData.title,
+        //       start: eventData.start,
+        //       end: eventData.end,
+        //       description: eventData.description,
+        //       location: eventData.location
+        //     };
+        //   }
+        // });
       
-        calendar.render();
+        // calendar.render();
         
         // calendar = new FullCalendar.Calendar(calendarEl, {
         //   themeSystem: 'bootstrap5',
