@@ -86,95 +86,111 @@
           calendarEl.removeChild(calendarEl.firstChild);
         }
 
-        calendar = new FullCalendar.Calendar(calendarEl, {
-          themeSystem: 'bootstrap5',
-          initialView: 'listMonth',
-          height: 'auto',
- 
-          customButtons: {
-            Help: {
-              text: 'Help',
-              click: function() {
-                alert('Click or Tap on any day to sign up for service.\nPlease use first name only.');
-              }
-            }
-          },
-
-          views: {
-            listDay: { buttonText: 'list day' },
-            listMonth: { buttonText: 'List View' },
-            dayGridMonth: { buttonText: 'Month View' }
-          },
-          headerToolbar: {
-            left: 'prev,next Help',
-            center: 'title',
-            right: 'listMonth,dayGridMonth'
-          },
-
-          displayEventTime: false, // don't show the time column in list view
-
-          eventSources: [
-            // US Holidays  
-            'en.usa#holiday@group.v.calendar.google.com',
-            'edf280615acc40360717720a291d312d4a5736683ad661652a9772b2e8558d87@group.calendar.google.com',
-          ],
-
-          eventClick: function(info) {
-            info.jsEvent.preventDefault(); // prevents browser from following link in current tab.
-
-            console.log(`eventClick\n${JSON.stringify(info.event)}`);
-            currentEvent = info.event;
-            if (currentEvent.title == meetingTitle) {
-              openModal(currentEvent);
-            }
-          },
-
-          // eventContent: (arg) => ({
-          //   html: `<a href="${arg.event.url}">${arg.event.title}</a>`
-          // }),
-
-          eventContent: function(arg) {
-            console.log(`eventContent\n${JSON.stringify(arg.event)}`);
-            var currentEvent = arg.event;
-
-            console.log(`Event: ${currentEvent.title}\nDescription:${currentEvent.extendedProps.description}\nDate:${currentEvent.start.toISOString()}`);
-            var meetingType = "Open Meeting";
-
-            switch (getWeekNumberOfMonth(currentEvent.start)) {
-                case 1:
-                    meetingType = "Step Meeting"
-                    break;
-                case 3:
-                    meetingType = "Tradition Meeting (Business Meeting)"
-                    break;
-                case 5:
-                    meetingType = "Sponsorship Meeting"
-                    // Some months might have a fifth week depending on how days align
-                    break;
-            }
-
-            var available = "<span style='color: red;''>Available</span>"
-            
-            var info = getExtendedDetails(currentEvent.extendedProps.description);
-
-            var chair = info.chair != '' ? info.chair : available;
-            var onlineHost = info.onlineHost != '' ? info.onlineHost : available;
-            var techHost = info.techHost != '' ? info.techHost : available;
-
-
-            let eventEl = document.createElement('p');
-
-            if(currentEvent.title == meetingTitle) {
-              eventEl.innerHTML = `<a href="${currentEvent.url}">${currentEvent.title}</a><br>${meetingType}<br>Chair: ${chair}<br>Online Host: ${onlineHost}<br>Tech Host: ${techHost}`;
-            }
-            else {
-              eventEl.innerHTML = `${currentEvent.title}`;
-            }
- 
-            let arrayOfDomNodes = [ eventEl ];
-            return { domNodes: arrayOfDomNodes };
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          events: 'https://script.googleapis.com/v1/scripts/AKfycbwGtZbC9c3BVYRsTBUjbI2pVel8YWJA-JQiREJQxkuEby0LOZJbk5XkjO7yeXn-YkAG:run', // Your Apps Script URL
+          eventDataTransform: function (eventData) {
+            return {
+              title: eventData.title,
+              start: eventData.start,
+              end: eventData.end,
+              description: eventData.description,
+              location: eventData.location
+            };
           }
         });
+      
+        calendar.render();
+        
+        // calendar = new FullCalendar.Calendar(calendarEl, {
+        //   themeSystem: 'bootstrap5',
+        //   initialView: 'listMonth',
+        //   height: 'auto',
+ 
+        //   customButtons: {
+        //     Help: {
+        //       text: 'Help',
+        //       click: function() {
+        //         alert('Click or Tap on any day to sign up for service.\nPlease use first name only.');
+        //       }
+        //     }
+        //   },
+
+        //   views: {
+        //     listDay: { buttonText: 'list day' },
+        //     listMonth: { buttonText: 'List View' },
+        //     dayGridMonth: { buttonText: 'Month View' }
+        //   },
+        //   headerToolbar: {
+        //     left: 'prev,next Help',
+        //     center: 'title',
+        //     right: 'listMonth,dayGridMonth'
+        //   },
+
+        //   displayEventTime: false, // don't show the time column in list view
+
+        //   eventSources: [
+        //     // US Holidays  
+        //     'en.usa#holiday@group.v.calendar.google.com',
+        //     'edf280615acc40360717720a291d312d4a5736683ad661652a9772b2e8558d87@group.calendar.google.com',
+        //   ],
+
+        //   eventClick: function(info) {
+        //     info.jsEvent.preventDefault(); // prevents browser from following link in current tab.
+
+        //     console.log(`eventClick\n${JSON.stringify(info.event)}`);
+        //     currentEvent = info.event;
+        //     if (currentEvent.title == meetingTitle) {
+        //       openModal(currentEvent);
+        //     }
+        //   },
+
+        //   // eventContent: (arg) => ({
+        //   //   html: `<a href="${arg.event.url}">${arg.event.title}</a>`
+        //   // }),
+
+        //   eventContent: function(arg) {
+        //     console.log(`eventContent\n${JSON.stringify(arg.event)}`);
+        //     var currentEvent = arg.event;
+
+        //     console.log(`Event: ${currentEvent.title}\nDescription:${currentEvent.extendedProps.description}\nDate:${currentEvent.start.toISOString()}`);
+        //     var meetingType = "Open Meeting";
+
+        //     switch (getWeekNumberOfMonth(currentEvent.start)) {
+        //         case 1:
+        //             meetingType = "Step Meeting"
+        //             break;
+        //         case 3:
+        //             meetingType = "Tradition Meeting (Business Meeting)"
+        //             break;
+        //         case 5:
+        //             meetingType = "Sponsorship Meeting"
+        //             // Some months might have a fifth week depending on how days align
+        //             break;
+        //     }
+
+        //     var available = "<span style='color: red;''>Available</span>"
+            
+        //     var info = getExtendedDetails(currentEvent.extendedProps.description);
+
+        //     var chair = info.chair != '' ? info.chair : available;
+        //     var onlineHost = info.onlineHost != '' ? info.onlineHost : available;
+        //     var techHost = info.techHost != '' ? info.techHost : available;
+
+
+        //     let eventEl = document.createElement('p');
+
+        //     if(currentEvent.title == meetingTitle) {
+        //       eventEl.innerHTML = `<a href="${currentEvent.url}">${currentEvent.title}</a><br>${meetingType}<br>Chair: ${chair}<br>Online Host: ${onlineHost}<br>Tech Host: ${techHost}`;
+        //     }
+        //     else {
+        //       eventEl.innerHTML = `${currentEvent.title}`;
+        //     }
+ 
+        //     let arrayOfDomNodes = [ eventEl ];
+        //     return { domNodes: arrayOfDomNodes };
+        //   }
+        // });
         
         calendar.render();
       }
