@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.17/index.global.min.js'></script>
+  </head>
+  <body>
+    <div id="calendarDiv"><h1>Loading.  Please wait...</h1></div>
+    <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Meeting Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p id="eventTitle"></p>
+            <p id="eventDescription"></p>
+            <form id = 'myForm'>
+              <div class="row mb-3">
+                <label for="chair" class="col-sm-4 col-form-label">Chair</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="chair" name="Chair">
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="onlineHost" class="col-sm-4 col-form-label">Online Host</label>
+                <div class="col-sm-8">
+                <input type="text" class="form-control" id="onlineHost" name="onlineHost">
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="techHost" class="col-sm-4 col-form-label">Technology Host</label>
+                <div class="col-sm-8">
+                <input type="text" class="form-control" id="techHost" name="techHost">
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="timer" class="col-sm-4 col-form-label">Online Timer</label>
+                <div class="col-sm-8">
+                <input type="text" class="form-control" id="timer" name="timer">
+                </div>
+              </div>
+              <div>
+                <input type='hidden' id='eventid' name='eventid' value=''>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="saveBtn" disabled data-bs-dismiss="modal">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Javascript -->
+
+    <script>
+      var meetingTitle = "Love, Gifts and Gratitude Al-Anon Meeting";
+      var originalFormValues = {};
+      var isFormDirty = false;
+      var currentEvent = null;
+      var holidayEvents = null;
+      var meetingEvents = null;
+      var calendar = null;
+ 
+      $(document).ready(function() {
+        initCalendar();
+          $('.fc .fc-toolbar.fc-header-toolbar').css({
+          'position': 'sticky',
+          'top': '0',
+          'background-color': 'white',
+          'z-index': '1000'
+        });
+      });
+
+      function initCalendar() {
+        var calendarEl = document.getElementById('calendarDiv');
+
+        while (calendarEl.firstChild) {
+          calendarEl.removeChild(calendarEl.firstChild);
+        }
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          themeSystem: 'bootstrap5',
+          initialView: 'listMonth',
+          height: 'auto',
+ 
+          customButtons: {
+            Help: {
+              text: 'Help',
+              click: function() {
+                alert('Click or Tap on any day to sign up for service.\nPlease use first name only.');
+              }
+            }
+          },
+
+          views: {
+            listDay: { buttonText: 'list day' },
+            listMonth: { buttonText: 'List View' },
+            dayGridMonth: { buttonText: 'Month View' }
+          },
+          headerToolbar: {
+            left: 'prev,next Help',
+            center: 'title',
+            right: 'listMonth,dayGridMonth'
+          },
+
+          displayEventTime: false, // don't show the time column in list view
+
+          googleCalendarApiKey: 'AIzaSyBuh_EuQJyI34jK7SYdkUI8C-k7iyeT1Rc',
+
+          eventSources: [
+            // US Holidays  
+            'en.usa#holiday@group.v.calendar.google.com',
+            'edf280615acc40360717720a291d312d4a5736683ad661652a9772b2e8558d87@group.calendar.google.com',
+            'https://www.oregonal-anon.org/api/open/GetItemsByMonth?month=05-2025&collectionId=5c980cb3652deafd31ed7f1e'
+          ],
+
+          eventClick: function(info) {
+            info.jsEvent.preventDefault(); // prevents browser from following link in current tab.
+
+            console.log(`eventClick\n${JSON.stringify(info.event)}`);
+            currentEvent = info.event;
+            if (currentEvent.title == meetingTitle) {
+              openModal(currentEvent);
+            }
+          },
+
+          // eventContent: (arg) => ({
+          //   html: `<a href="${arg.event.url}">${arg.event.title}</a>`
+          // }),
+
+          eventContent: function(arg) {
+            console.log(`eventContent\n${JSON.stringify(arg.event)}`);
+            var currentEvent = arg.event;
+
+            console.log(`Event: ${currentEvent.title}\nDescription:${currentEvent.extendedProps.description}\nDate:${currentEvent.start.toISOString()}`);
+            var meetingType = "Open Meeting";
+
+            switch (getWeekNumberOfMonth(currentEvent.start)) {
+                case 1:
+                    meetingType = "Step Meeting"
+                    break;
+                case 3:
+                    meetingType = "Tradition Meeting (Business Meeting)"
+                    break;
+                case 5:
+                    meetingType = "Sponsorship Meeting"
+                    // Some months might have a fifth week depending on how days align
+                    break;
+            }
+
+            var available = "<span style='color: red;''>Available</span>"
+            
+            var info = getExtendedDetails(currentEvent.extendedProps.description);
+
+            var chair = info.chair != '' ? info.chair : available;
+            var onlineHost = info.onlineHost != '' ? info.onlineHost : available;
+            var techHost = info.techHost != '' ? info.techHost : available;
+
+
+            let eventEl = document.createElement('p');
+
+            if(currentEvent.title == meetingTitle) {
+              eventEl.innerHTML = `<a href="${currentEvent.url}">${currentEvent.title}</a><br>${meetingType}<br>Chair: ${chair}<br>Online Host: ${onlineHost}<br>Tech Host: ${techHost}`;
+            }
+            else {
+              eventEl.innerHTML = `${currentEvent.title}`;
+            }
+ 
+            let arrayOfDomNodes = [ eventEl ];
+            return { domNodes: arrayOfDomNodes };
+          }
+        });
+        
+        calendar.render();
+      }
+
+      function getExtendedDetails(description) {
+          var chair = '';
+          var onlineHost = '';
+          var techHost = '';
+          const chairRegex = /Chair: ([^\n]+)/;
+          const onlineHostRegex = /Online Host: ([^\n]+)/;
+          const techHostRegex = /Tech Host: ([^\n]+)/;
+          const timerRegex = /Timer: ([^\n]+)/;
+          var match = null;
+
+          if (description) {
+
+            if (match = description.match(chairRegex)) {
+              chair = match[1];
+            }
+
+            if (match = description.match(onlineHostRegex)) {
+              onlineHost = match[1];
+            }
+
+            if (match = description.match(techHostRegex)) {
+              techHost = match[1];
+            }
+
+            if (match = description.match(timerRegex)) {
+              timer = match[1];
+            }
+          }
+
+          return {'chair': chair, 'onlineHost': onlineHost, 'techHost': techHost, 'timer' : timer};
+      }
+
+      function getWeekNumberOfMonth(date) {
+          const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+          const startWeekDay = startOfMonth.getDay();
+          
+          // Find how many days have passed in the current month including the given date
+          const daysPassed = date.getDate();
+          
+          // Calculate which week the date falls in
+          return Math.ceil((daysPassed + startWeekDay) / 7);
+      }
+
+      // Function to open the modal
+      function openModal(eventInfo) {
+        console.log(JSON.stringify(eventInfo, null, 2));
+        details = getExtendedDetails(eventInfo.extendedProps.description);
+
+        $('#eventTitle').text(eventInfo.title);
+        $('#eventDescription').text(eventInfo.description);
+        $('#chair').val(details.chair);
+        $('#onlineHost').val(details.onlineHost);
+        $('#techHost').val(details.techHost);
+        $('#timer').val(details.timer);
+        $('#eventid').val(eventInfo.extendedProps.eventid);
+        $('#myModal').modal('show');
+      };
+
+      // Event handler for opening the modal
+      $('#myModal').on('show.bs.modal', function (event) {
+        originalFormValues = getFormValues();
+        isFormDirty = false;
+      });
+      
+      // Event handler for input change inside the modal
+      $('.modal-body input').on('input', function () {
+        isFormDirty = checkFormDirty();
+        updateSaveButtonState();
+      });
+
+      $("#saveBtn").click(function() {
+        console.log("SaveButton Clicked");
+        var formResults = getFormValues();
+
+        if (currentEvent != null) {
+          currentEvent.setExtendedProp('description', `Chair: ${formResults['chair']}\nOnline Host: ${formResults['onlineHost']}\nTech Host: ${formResults['techHost']}\nOnline Timer: ${formResults['timer']}`);
+
+          console.log("Calling UpdateEvent");
+          console.log(currentEvent.extendedProps);
+          google.script.run.updateEvent(currentEvent.id, currentEvent.extendedProps);
+          currentEvent = null;
+        }
+      });
+
+      function getFormValues() {
+        var formValues = {};
+        $('#myForm :input').each(function() {
+          var input = $(this);
+          formValues[input.attr('eventid')] = input.val();
+        });
+        return formValues;
+      }
+
+      function checkFormDirty() {
+        var formdirty = false;
+        var currentFormValues = getFormValues();
+
+        for (var key in currentFormValues) {
+          if (currentFormValues[key] !== originalFormValues[key]) {
+            formdirty = true;
+          }
+        }
+        return formdirty;
+      }
+
+      function updateSaveButtonState() {
+        if (isFormDirty) {
+          $('#saveBtn').prop('disabled', false);
+        } else {
+          $('#saveBtn').prop('disabled', true);
+        }
+      }
+    </script>
+  </body>
+</html>
